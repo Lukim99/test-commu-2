@@ -78,6 +78,16 @@ document.getElementById('create-post-form').addEventListener('submit', async fun
   const title = document.getElementById('title').value;
   const content = document.getElementById('content').value;
 
+  const post = {
+    title: title,
+    password: password,
+    author: nickname,
+    content: content,
+    views: 0,
+    created: new Date().toISOString(),
+    comments: []
+  };
+
   try {
     // GitHub API를 사용하여 게시글 데이터 저장
     const response = await fetch(`https://api.github.com/repos/Lukim99/test-commu-2/contents/${filePath}`, {
@@ -89,12 +99,7 @@ document.getElementById('create-post-form').addEventListener('submit', async fun
       body: JSON.stringify({
         message: 'Add new post',
         content: btoa(JSON.stringify([
-          {
-            title: title,
-            author: nickname,
-            views: 0,
-            created: new Date().toISOString().split('T')[0]
-          },
+          post,
           ...posts
         ])),
         sha: ''
