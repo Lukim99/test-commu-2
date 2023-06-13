@@ -1,67 +1,64 @@
-// 게시글 데이터 예시
-const posts = [
-  {
-    title: '첫 번째 게시글',
-    author: 'John Doe',
-    views: 10,
-    created: '2023-06-01'
-  },
-  {
-    title: '두 번째 게시글',
-    author: 'Jane Smith',
-    views: 15,
-    created: '2023-06-02'
-  }
-];
+// GitHub 액세스 토큰
+const accessToken = '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';
+
+// 게시글 데이터 파일 경로
+const filePath = 'data/posts.json';
 
 // 게시글 목록을 출력하는 함수
-function renderPostList() {
+async function renderPostList() {
   const postList = document.getElementById('post-list');
 
   // 기존 게시글 목록 초기화
   postList.innerHTML = '';
 
-  // 각 게시글을 순회하며 HTML 요소 생성
-  for (let i = 0; i < posts.length; i++) {
-    const post = posts[i];
+  try {
+    // GitHub API를 사용하여 게시글 데이터 가져오기
+    const response = await fetch(`https://api.github.com/repos/Lukim99/test-commu-2/contents/${filePath}`, {
+      headers: {
+        Authorization: `token ${accessToken}`
+      }
+    });
 
-    const postElem = document.createElement('div');
-    postElem.classList.add('post');
+    if (response.ok) {
+      const data = await response.json();
+      const posts = JSON.parse(atob(data.content));
 
-    const titleElem = document.createElement('h3');
-    titleElem.textContent = post.title;
+      // 각 게시글을 순회하며 HTML 요소 생성
+      for (let i = 0; i < posts.length; i++) {
+        const post = posts[i];
 
-    const authorElem = document.createElement('p');
-    authorElem.textContent = `작성자: ${post.author}`;
+        const postElem = document.createElement('div');
+        postElem.classList.add('post');
 
-    const viewsElem = document.createElement('p');
-    viewsElem.textContent = `조회수: ${post.views}`;
+        const titleElem = document.createElement('h3');
+        titleElem.textContent = post.title;
 
-    const createdElem = document.createElement('p');
-    createdElem.textContent = `작성일: ${post.created}`;
+        const authorElem = document.createElement('p');
+        authorElem.textContent = `작성자: ${post.author}`;
 
-    postElem.appendChild(titleElem);
-    postElem.appendChild(authorElem);
-    postElem.appendChild(viewsElem);
-    postElem.appendChild(createdElem);
+        const viewsElem = document.createElement('p');
+        viewsElem.textContent = `조회수: ${post.views}`;
 
-    postList.appendChild(postElem);
+        const createdElem = document.createElement('p');
+        createdElem.textContent = `작성일: ${post.created}`;
+
+        postElem.appendChild(titleElem);
+        postElem.appendChild(authorElem);
+        postElem.appendChild(viewsElem);
+        postElem.appendChild(createdElem);
+
+        postList.appendChild(postElem);
+      }
+    } else {
+      console.error('Failed to fetch post data:', response.status, response.statusText);
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
   }
 }
 
-// 게시글 작성 버튼 클릭 시 이벤트 핸들러
-document.getElementById('create-post-btn').addEventListener('click', function() {
-  const modal = document.getElementById('create-post-modal');
-  modal.style.display = 'block';
-
-  // 닫기 버튼 클릭 시 모달 닫기
-  modal.querySelector('.close').addEventListener('click', function() {
-    modal.style.display = 'none';
-  });
-});
-
 // 게시글 작성 폼 제출 시 이벤트 핸들러
-document.getElementById('create-post-form').addEventListener('submit', function(event) {
+document.getElementById('create-post-form').addEventListener('submit', async function(event) {
   event.preventDefault();
 
   // 입력된 데이터 가져오기
@@ -70,26 +67,45 @@ document.getElementById('create-post-form').addEventListener('submit', function(
   const title = document.getElementById('title').value;
   const content = document.getElementById('content').value;
 
-  // 데이터를 GitHub에 저장하고, 성공 시 메인 화면으로 돌아가기
-  // 이 부분은 GitHub API를 사용하여 구현해야 합니다.
+  try {
+    // GitHub API를 사용하여 게시글 데이터 저장
+    const response = await fetch(`https://api.github.com/repos/Lukim99/test-commu-2/contents/${filePath}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'Add new post',
+        content: btoa(JSON.stringify([
+          {
+            title: title,
+            author: nickname,
+            views: 0,
+            created: new Date().toISOString().split('T')[0]
+          },
+          ...posts
+        ])),
+        sha: ''
+      })
+    });
 
-  // 예시로 데이터를 저장하는 동작만 수행
-  posts.push({
-    title: title,
-    author: nickname,
-    views: 0,
-    created: new Date().toISOString().split('T')[0]
-  });
+    if (response.ok) {
+      // 게시글 목록 다시 출력
+      await renderPostList();
 
-  // 게시글 목록 다시 출력
-  renderPostList();
+      // 모달 닫기
+      const modal = document.getElementById('create-post-modal');
+      modal.style.display = 'none';
 
-  // 모달 닫기
-  const modal = document.getElementById('create-post-modal');
-  modal.style.display = 'none';
-
-  // 폼 초기화
-  document.getElementById('create-post-form').reset();
+      // 폼 초기화
+      document.getElementById('create-post-form').reset();
+    } else {
+      console.error('Failed to save post data:', response.status, response.statusText);
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
 });
 
 // 초기 게시글 목록 출력
