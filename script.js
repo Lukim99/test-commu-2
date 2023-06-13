@@ -69,60 +69,67 @@ document.getElementById('create-post-btn').addEventListener('click', function() 
 });
 
 // 게시글 작성 폼 제출 시 이벤트 핸들러
-document.getElementById('create-post-form').addEventListener('submit', async function(event) {
-  event.preventDefault();
+document.getElementById('create-post-form').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-  // 입력된 데이터 가져오기
-  const nickname = document.getElementById('nickname').value;
-  const password = document.getElementById('password').value;
-  const title = document.getElementById('title').value;
-  const content = document.getElementById('content').value;
+    // 폼 입력값 가져오기
+    const nickname = document.getElementById('nickname').value;
+    const password = document.getElementById('password').value;
+    const title = document.getElementById('title').value;
+    const content = document.getElementById('content').value;
 
-  const post = {
-    title: title,
-    password: password,
-    author: nickname,
-    content: content,
-    views: 0,
-    created: new Date().toISOString(),
-    comments: []
-  };
+    // 게시글 데이터 생성
+    const post = {
+      title: title,
+      password: password,
+      author: nickname,
+      content: content,
+      views: 0,
+      created: new Date().toISOString(),
+      comments: []
+    };
 
-  try {
     // GitHub API를 사용하여 게시글 데이터 저장
-    const response = await fetch(`https://api.github.com/repos/Lukim99/test-commu-2/contents/${filePath}`, {
-      method: 'PUT',
+    const url = `https://api.github.com/repos/{YOUR_USERNAME}/{YOUR_REPO}/contents/${filePath}`;
+
+    fetch(url, {
+      method: 'GET',
       headers: {
-        Authorization: `token ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: 'Add new post',
-        content: btoa(JSON.stringify([
-          post,
-          ...posts
-        ])),
-        sha: ''
+        'Authorization': `token ${accessToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        const posts = JSON.parse(atob(data.content));
+        posts.push(post);
+
+        const updatedContent = btoa(JSON.stringify(posts));
+        const body = {
+          message: 'Add new post',
+          content: updatedContent,
+          sha: data.sha
+        };
+
+        fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        })
+          .then(response => response.json())
+          .then(data => {
+            console.log('New post created:', data);
+            // 게시글 작성 완료 후 모달 닫기 및 화면 새로고침
+            const modal = document.getElementById('create-post-modal');
+            modal.style.display = 'none';
+            window.location.reload();
+          })
+          .catch(error => console.error('Error updating file:', error));
       })
-    });
-
-    if (response.ok) {
-      // 게시글 목록 다시 출력
-      await renderPostList();
-
-      // 모달 닫기
-      const modal = document.getElementById('create-post-modal');
-      modal.style.display = 'none';
-
-      // 폼 초기화
-      document.getElementById('create-post-form').reset();
-    } else {
-      console.error('Failed to save post data:', response.status, response.statusText);
-    }
-  } catch (error) {
-    console.error('Error:', error.message);
-  }
-});
+      .catch(error => console.error('Error retrieving file:', error));
+  });
 
 // 초기 게시글 목록 출력
 renderPostList();
