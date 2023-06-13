@@ -1,5 +1,5 @@
 // GitHub 액세스 토큰
-const accessToken = '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';
+const accessToken = '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';
 
 // 게시글 데이터 파일 경로
 const filePath = 'data/posts.json';
