@@ -57,6 +57,17 @@ async function renderPostList() {
   }
 }
 
+// 게시글 작성 버튼 클릭 시 이벤트 핸들러
+document.getElementById('create-post-btn').addEventListener('click', function() {
+  const modal = document.getElementById('create-post-modal');
+  modal.style.display = 'block';
+
+  // 닫기 버튼 클릭 시 모달 닫기
+  modal.querySelector('.close').addEventListener('click', function() {
+    modal.style.display = 'none';
+  });
+});
+
 // 게시글 작성 폼 제출 시 이벤트 핸들러
 document.getElementById('create-post-form').addEventListener('submit', async function(event) {
   event.preventDefault();
